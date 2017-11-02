@@ -15,17 +15,21 @@ module FilestackRails
       user_callback = options[:callback] || nil
       options.delete(:callback)
 
-      form_field_callback_guts = 'const filestack_input_field' \
-        "= document.getElementById('#{input_options[:id]}');" \
-        'filestack_input_field.value = data.filesUploaded[0].url;'
+      id = input_options[:id]
+      js_callbacks = <<~JSCODE
+        const filestack_input_field = document.getElementById('#{id}');
+        filestack_input_field.value = data.filesUploaded[0].url;
+        data.inputDivId = "#{id}";
+      JSCODE
 
       unless user_callback.nil?
-        form_field_callback_guts = "#{form_field_callback_guts}#{user_callback}(data)"
+        js_callbacks = "#{js_callbacks}#{user_callback}(data)"
       end
-      
-      form_field_callback = "(function(data){#{form_field_callback_guts}})"
 
-      html_string = "#{filestack_picker_element(content, form_field_callback, options)}#{text_field(method, input_options)}"
+      form_field_callback = "(function(data){#{js_callbacks}})"
+
+      picker = filestack_picker_element(content, form_field_callback, options)
+      html_string = "#{picker}#{text_field(method, input_options)}"
       raw html_string.html_safe
     end
   end
